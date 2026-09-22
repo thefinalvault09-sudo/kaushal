@@ -93,18 +93,29 @@ export default function AquaSelect<T extends string>({
     }
     // The panel is fixed-positioned relative to the trigger; rather than
     // track it while the page moves, just close on scroll/resize.
-    function handleReflow() {
+    function handleScroll(e: Event) {
+      // Capture-phase listener catches every scroll on the page, INCLUDING
+      // the panel's own internal scroll when the user drags through a long
+      // option list (Daily-refresh hour with 24 entries, Reminder frequency,
+      // etc.). Only close when the scroll originates OUTSIDE the panel —
+      // that's the "page moved behind us, we'd be misaligned now" case the
+      // close is meant to handle. An internal scroll is expected UX.
+      const target = e.target as Node | null;
+      if (target && panelRef.current?.contains(target)) return;
+      setOpen(false);
+    }
+    function handleResize() {
       setOpen(false);
     }
     document.addEventListener('mousedown', handlePointerDown);
     document.addEventListener('keydown', handleKey);
-    window.addEventListener('scroll', handleReflow, true);
-    window.addEventListener('resize', handleReflow);
+    window.addEventListener('scroll', handleScroll, true);
+    window.addEventListener('resize', handleResize);
     return () => {
       document.removeEventListener('mousedown', handlePointerDown);
       document.removeEventListener('keydown', handleKey);
-      window.removeEventListener('scroll', handleReflow, true);
-      window.removeEventListener('resize', handleReflow);
+      window.removeEventListener('scroll', handleScroll, true);
+      window.removeEventListener('resize', handleResize);
     };
   }, [open]);
 
