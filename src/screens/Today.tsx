@@ -3,6 +3,7 @@ import { useApp } from '../context/AppContext';
 import { formatLongDate, todayISO } from '../utils/date';
 import { capitalizeFirstLetter, getStoredUserName } from '../utils/userName';
 import { useTodayItems } from '../hooks/useTodayItems';
+import { useYesterdayLeftovers } from '../hooks/useYesterdayLeftovers';
 import FocusLens from '../components/FocusLens';
 import AnimatedNumber from '../components/AnimatedNumber';
 import TodayGroup from '../components/today/TodayGroup';
@@ -11,11 +12,12 @@ import { CloseIcon } from '../components/icons';
 import './Today.css';
 
 export default function Today() {
-  const { timer, startTimer, pauseTimer, resumeTimer, stopTimer, toggleTodayCompletion, error, dismissError, settings } =
+  const { timer, startTimer, pauseTimer, resumeTimer, stopTimer, toggleDayCompletion, error, dismissError, settings } =
     useApp();
   const [actionError, setActionError] = useState<string | null>(null);
   const today = todayISO(settings.dailyResetHour);
   const items = useTodayItems();
+  const yesterdayLeftovers = useYesterdayLeftovers();
 
   // Operational grouping: what needs attention -> what is in progress -> what is complete.
   // `items` is a fresh array every render (see useTodayItems), including
@@ -56,10 +58,14 @@ export default function Today() {
   }, [isEmpty]);
 
   const handleStart = useCallback(
-    async (commitmentId: string) => {
+    async (commitmentId: string, date: string) => {
+      // `date` comes from the card's own record: today's cards pass
+      // today's ISO, the "Yesterday leftover" section passes yesterday's
+      // ISO. Whichever date is passed becomes the timer session's dayDate,
+      // so the elapsed time accrues onto that specific day's record.
       setActionError(null);
       try {
-        await startTimer(commitmentId);
+        await startTimer(commitmentId, date);
       } catch (err) {
         setActionError(err instanceof Error ? err.message : 'Could not start the timer.');
       }
@@ -68,15 +74,15 @@ export default function Today() {
   );
 
   const handleToggleComplete = useCallback(
-    async (commitmentId: string) => {
+    async (commitmentId: string, date: string) => {
       setActionError(null);
       try {
-        await toggleTodayCompletion(commitmentId);
+        await toggleDayCompletion(commitmentId, date);
       } catch (err) {
         setActionError(err instanceof Error ? err.message : 'Could not update this habit.');
       }
     },
-    [toggleTodayCompletion],
+    [toggleDayCompletion],
   );
 
   // Stable object identity across ticks (all inputs are already useCallback
@@ -144,6 +150,11 @@ export default function Today() {
               </>
             )}
             <TodayGroup title="Complete" tone="complete" items={complete} controls={controls} timer={timer} collapsedMeta />
+            {/* Yesterday's leftovers appear last, below Complete, so
+               today's work is always the visual focus. Only rendered when
+               there's actually something to catch up on — TodayGroup
+               returns null for empty items and the section vanishes. */}
+            <TodayGroup title="Yesterday" tone="attention" items={yesterdayLeftovers} controls={controls} timer={timer} collapsedMeta />
           </div>
 
           <aside className="today-context" aria-label="Daily status">

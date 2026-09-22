@@ -21,7 +21,7 @@ export function reopenHabitDay(record: HabitDayRecord): HabitDayRecord {
 }
 
 /** Flips a day record between DONE and NOT_STARTED. Extracted verbatim
- *  from AppContext's toggleTodayCompletion — same DONE/undo semantics. */
+ *  from AppContext's toggleDayCompletion — same DONE/undo semantics. */
 export function toggleHabitDayCompletion(
   record: HabitDayRecord,
   now: () => number = () => Date.now(),

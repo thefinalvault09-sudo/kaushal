@@ -20,6 +20,8 @@ import {
 import type { Commitment, DayRecord, ExportPayload, Settings, TimerState } from '../types';
 import * as repo from '../db/repository';
 import { todayISO } from '../utils/date';
+import { playAlertTune } from '../utils/alertSound';
+import { supportsVibration } from '../utils/notificationCapabilities';
 import { reconcileReminders, startReminderLoop, type ReminderState } from '../utils/reminderScheduler';
 import {
   applyAutoCompleteToRecord,
@@ -49,14 +51,23 @@ interface AppContextValue {
   dayRecordsFor: (commitmentId: string) => DayRecord[];
   dayRecordFor: (commitmentId: string, date: string) => DayRecord | undefined;
 
-  startTimer: (commitmentId: string) => Promise<void>;
+  /** Starts a timer for `commitmentId` on the given `date` (default: today).
+   *  Passing an explicit past date is how the Today screen's "Yesterday
+   *  leftover" section resumes an incomplete day — the resulting session
+   *  writes back into THAT date's record, and its later DONE is flagged
+   *  COMPLETED_LATE by history since completedAt lies on a later day. */
+  startTimer: (commitmentId: string, date?: string) => Promise<void>;
   pauseTimer: () => Promise<void>;
   resumeTimer: () => Promise<void>;
   stopTimer: () => Promise<void>;
 
-  /** Toggles a Completion-type commitment's today record between DONE and
-   *  NOT_STARTED. No timer is ever involved for these commitments. */
-  toggleTodayCompletion: (commitmentId: string) => Promise<void>;
+  /** Toggles a Completion-type commitment's record for `date` (default:
+   *  today) between DONE and NOT_STARTED. No timer is ever involved for
+   *  these commitments. The `date` parameter lets the Today screen's
+   *  "Yesterday leftover" section mark a missed completion habit as
+   *  DONE — completedAt is stamped `now`, so history derives
+   *  COMPLETED_LATE for it. */
+  toggleDayCompletion: (commitmentId: string, date?: string) => Promise<void>;
 
   updateSettings: (partial: Partial<Settings>) => Promise<void>;
   exportData: () => Promise<ExportPayload>;
@@ -114,6 +125,34 @@ export function useSettings(): SettingsContextValue {
   return ctx;
 }
 
+/**
+ * Fires the timer-completion feedback — the tune and/or a haptic buzz —
+ * gated on the user's existing Sound and Vibration toggles from the
+ * Reminders section of Settings. They're reused deliberately: the user
+ * asked for a single "ring or vibrate" preference that applies both to
+ * scheduled reminders and to timer completions, rather than two parallel
+ * sets of toggles to keep in sync.
+ *
+ * Called from both the auto-complete path and the manual-stop-at-target
+ * path in AppContext; kept as a module-level helper so both call sites
+ * can't drift out of sync. Reads live from a settings snapshot rather
+ * than closing over React state — callers pass settingsRef.current so
+ * the event fires with whatever the user has toggled right now, not
+ * what was captured when the interval/handler was set up.
+ */
+function fireCompletionFeedback(settings: Settings): void {
+  if (settings.reminderSound) {
+    playAlertTune();
+  }
+  // 220ms is long enough to feel deliberate ("completed!") without buzzing
+  // the phone off a desk — mirrors the reminder-vibration value used in
+  // reminderScheduler's web fire path, keeping the whole app's haptic
+  // vocabulary consistent.
+  if (settings.reminderVibration && supportsVibration()) {
+    navigator.vibrate(220);
+  }
+}
+
 export function AppProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -154,13 +193,49 @@ export function AppProvider({ children }: { children: ReactNode }) {
     let cancelled = false;
     (async () => {
       try {
-        const [loadedCommitments, loadedRecords, loadedTimer, loadedSettings] = await Promise.all([
+        const [loadedCommitments, loadedRecords, loadedTimerRaw, loadedSettings] = await Promise.all([
           repo.listCommitments(),
           repo.listAllDayRecords(),
           repo.getTimerState(),
           repo.getSettings(),
         ]);
         if (cancelled) return;
+
+        // Release a stale timer left over from a previous logical day.
+        //
+        // The TimerState singleton is persisted with the specific calendar
+        // date the session belongs to (`dayDate`). If the user closes the
+        // app mid-session and re-opens it after the daily-refresh boundary
+        // has rolled over — or simply the next morning — that TimerState
+        // still points to yesterday. Without releasing it here, the whole
+        // Today screen sees `!!timer === true`, every card's
+        // `isTimedHere` is false (dayDate mismatches today), and every
+        // Start button greys out under `anotherTimerRunning`. The auto-
+        // complete interval eventually cleans this up IFF the accumulated
+        // elapsed exceeds the target, but that isn't guaranteed — and it
+        // still leaves a visible "why is Start disabled" window at every
+        // launch.
+        //
+        // Data policy: we do NOT modify yesterday's day record here.
+        // Anything already persisted via pauses/stops is untouched; only
+        // the unsaved running-since-last-pause slice is dropped (which is
+        // inherent to any timer left running when the app closes). This
+        // keeps the fix purely "release the lock, keep the history",
+        // matching the user's "no data loss" mandate.
+        let loadedTimer: TimerState | null | undefined = loadedTimerRaw;
+        const todayLocal = todayISO(loadedSettings.dailyResetHour);
+        if (loadedTimer && loadedTimer.dayDate < todayLocal) {
+          try {
+            await repo.clearTimerState();
+          } catch {
+            // Best-effort: if the clear fails (very rare), we still fall
+            // through and set loadedTimer=null in memory so the current
+            // session is unblocked; the next app open will retry the
+            // clear.
+          }
+          loadedTimer = null;
+        }
+
         setCommitments(loadedCommitments);
         setDayRecords(loadedRecords);
         setTimer(loadedTimer ?? null);
@@ -243,6 +318,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
     await repo.clearTimerState();
     setDayRecords((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
     setTimer(null);
+    // Celebratory tune + haptic — target was just reached automatically
+    // while the timer ticked. Never fires for pauses/stops-before-target,
+    // and never for COMPLETION habits (they never enter this code path).
+    // Each channel is user-gated via its own Settings toggle so someone
+    // who wants "silent but buzzed" or "sound only, no buzz" can have it.
+    fireCompletionFeedback(settingsRef.current);
   }
 
   // ---------- commitments ----------
@@ -283,12 +364,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // to call them and how to save/broadcast the result; it doesn't compute
   // the timer/record math itself anymore.
   const startTimer = useCallback(
-    async (commitmentId: string) => {
-      const date = todayISO(settingsRef.current.dailyResetHour);
-      const record = dayRecordsRef.current.find((r) => r.commitmentId === commitmentId && r.date === date);
+    async (commitmentId: string, date?: string) => {
+      // `date` defaults to today (the original single-argument behavior).
+      // Passing an explicit past date is what the "Yesterday leftover"
+      // section uses to resume/complete a missed day — the session's
+      // dayDate is bound to that past date, so its elapsed accrues onto
+      // that record and later marks it DONE with completedAt = today
+      // (which derives as COMPLETED_LATE in history).
+      const targetDate = date ?? todayISO(settingsRef.current.dailyResetHour);
+      const record = dayRecordsRef.current.find((r) => r.commitmentId === commitmentId && r.date === targetDate);
       assertCanStartSession(timerRef.current, record);
 
-      const newTimer = startSession(commitmentId, date, record!.elapsedSeconds, Date.now());
+      const newTimer = startSession(commitmentId, targetDate, record!.elapsedSeconds, Date.now());
       await repo.saveTimerState(newTimer);
       setTimer(newTimer);
       setNowMs(Date.now());
@@ -332,22 +419,41 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const record = dayRecordsRef.current.find(
       (r) => r.commitmentId === current.commitmentId && r.date === current.dayDate,
     );
+    let reachedTargetThisStop = false;
     if (record) {
       const updatedRecord = applyStopToRecord(current, record, now);
       await repo.saveDayRecord(updatedRecord);
       setDayRecords((prev) => prev.map((r) => (r.id === updatedRecord.id ? updatedRecord : r)));
+      // Only fire the tune if this Stop is the moment the day became DONE.
+      // assertCanStartSession already blocks starting a timer on an
+      // already-DONE record, so `record.status !== 'DONE'` should always
+      // hold here — but we check anyway so a stray future code path that
+      // starts a session on a DONE record can't double-fire the sound.
+      reachedTargetThisStop = record.status !== 'DONE' && updatedRecord.status === 'DONE';
     }
     await repo.clearTimerState();
     setTimer(null);
     setNowMs(now);
+    if (reachedTargetThisStop) {
+      // Manual-stop-at-target counterpart of the auto-complete feedback in
+      // completeFromTimer — user chose to Stop right as/after the target
+      // was reached, and the record transitioned to DONE this call. Same
+      // Settings-gated ring + buzz behavior.
+      fireCompletionFeedback(settingsRef.current);
+    }
   }, []);
 
   // ---------- completion-only habits (no timer involved) ----------
-  const toggleTodayCompletion = useCallback(async (commitmentId: string) => {
-    const date = todayISO(settingsRef.current.dailyResetHour);
-    const record = dayRecordsRef.current.find((r) => r.commitmentId === commitmentId && r.date === date);
+  const toggleDayCompletion = useCallback(async (commitmentId: string, date?: string) => {
+    // `date` defaults to today. The Today screen's "Yesterday leftover"
+    // section passes an explicit past date to check off a missed
+    // completion habit; toggleHabitDayCompletion stamps completedAt = now,
+    // which history then derives as COMPLETED_LATE (since completedAt's
+    // calendar day > record.date).
+    const targetDate = date ?? todayISO(settingsRef.current.dailyResetHour);
+    const record = dayRecordsRef.current.find((r) => r.commitmentId === commitmentId && r.date === targetDate);
     if (!record) {
-      throw new Error('This commitment has no scheduled day for today.');
+      throw new Error('This commitment has no scheduled day for that date.');
     }
     const updated = toggleHabitDayCompletion(record);
     await repo.saveDayRecord(updated);
@@ -405,7 +511,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       pauseTimer,
       resumeTimer,
       stopTimer,
-      toggleTodayCompletion,
+      toggleDayCompletion,
       updateSettings,
       exportData,
       importData,
@@ -427,7 +533,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       pauseTimer,
       resumeTimer,
       stopTimer,
-      toggleTodayCompletion,
+      toggleDayCompletion,
       updateSettings,
       exportData,
       importData,

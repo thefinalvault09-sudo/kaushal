@@ -11,8 +11,14 @@ export interface TodayCardControls {
   pauseTimer: () => Promise<void>;
   resumeTimer: () => Promise<void>;
   stopTimer: () => Promise<void>;
-  handleStart: (id: string) => Promise<void>;
-  handleToggleComplete: (id: string) => Promise<void>;
+  /** Starts the timer for `id` on the card's specific date. Today's cards
+   *  pass today's ISO; the "Yesterday leftover" section passes yesterday's
+   *  ISO to resume a missed day — the same card component and buttons
+   *  serve both sections. */
+  handleStart: (id: string, date: string) => Promise<void>;
+  /** Toggles a completion habit's record for `id` on the card's specific
+   *  date. Same today/yesterday distinction as handleStart. */
+  handleToggleComplete: (id: string, date: string) => Promise<void>;
 }
 
 interface TodayCardProps {
@@ -157,7 +163,7 @@ function TodayCardButtons({
         <button
           type="button"
           className={`btn today-btn-sm${done ? ' btn-ghost today-btn-completed' : ' btn-primary'}`}
-          onClick={() => void controls.handleToggleComplete(commitment.id)}
+          onClick={() => void controls.handleToggleComplete(commitment.id, item.record.date)}
         >
           <CheckIcon width={13} height={13} /> {done ? 'Completed' : 'Complete'}
         </button>
@@ -212,7 +218,7 @@ function TodayCardButtons({
       <button
         type="button"
         className="btn btn-primary today-btn-sm"
-        onClick={() => void controls.handleStart(commitment.id)}
+        onClick={() => void controls.handleStart(commitment.id, item.record.date)}
         disabled={anotherTimerRunning}
         title={anotherTimerRunning ? 'Stop the active current first' : undefined}
       >

@@ -63,7 +63,10 @@ export default function Settings() {
   }
 
   function handleSendTest() {
-    void fireTestReminder(settings.reminderVibration && vibrationSupported);
+    void fireTestReminder({
+      withSound: settings.reminderSound,
+      withVibration: settings.reminderVibration && vibrationSupported,
+    });
     setTestSentAt(Date.now());
   }
 
@@ -111,13 +114,19 @@ export default function Settings() {
           </p>
         )}
 
+        {/* Sound and Vibration are deliberately NOT gated on `remindersOn`:
+            they also gate the timer-completion feedback (AppContext's
+            fireCompletionFeedback), which fires independent of whether
+            scheduled reminders are enabled. So the user can pick "ring &
+            vibrate on completion, no scheduled reminders" by leaving the
+            master off and these two on — or the reverse. Only genuinely
+            device-capability limits still disable the switch. */}
         <div className="settings-row">
           <span className="settings-row-label">Sound</span>
           <label className="settings-switch">
             <input
               type="checkbox"
               checked={settings.reminderSound}
-              disabled={!remindersOn || !notificationsSupported}
               onChange={(e) => void updateSettings({ reminderSound: e.target.checked })}
             />
             <span className="settings-switch-track" aria-hidden="true" />
@@ -132,7 +141,7 @@ export default function Settings() {
             <input
               type="checkbox"
               checked={settings.reminderVibration}
-              disabled={!remindersOn || !vibrationSupported}
+              disabled={!vibrationSupported}
               onChange={(e) => void updateSettings({ reminderVibration: e.target.checked })}
             />
             <span className="settings-switch-track" aria-hidden="true" />

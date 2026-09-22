@@ -23,7 +23,14 @@ import { LocalNotifications } from '@capacitor/local-notifications';
 import type { Commitment, DayRecord, Settings, TimerState } from '../types';
 import { todayISO } from './date';
 import { computeReminder, type SmartReminder } from '../domain/habit/reminders';
-import { getNotificationPermission, supportsVibration } from './notificationCapabilities';
+import {
+  REMINDER_CHANNEL_ID,
+  REMINDER_SOUND_FILE,
+  ensureReminderChannel,
+  getNotificationPermission,
+  supportsVibration,
+} from './notificationCapabilities';
+import { playAlertTune } from './alertSound';
 
 export interface ReminderState {
   commitments: Commitment[];
@@ -40,9 +47,14 @@ const FREQ_HOURS: Record<Settings['reminderFrequency'], number> = {
   EVERY_5H: 5,
 };
 
-/** Cap on how many future reminders to queue per commitment per day, so even
- *  "Every 1 hour" never becomes a wall of notifications. */
-const MAX_OCCURRENCES = 6;
+/** Cap on how many future reminders to queue per commitment. Previously
+ *  6, which paired with the old "stop at next daily reset" boundary cap
+ *  meant reminders regularly ran out mid-day (e.g. EVERY_5H set at 8 PM
+ *  with a midnight reset queued zero occurrences at all). We now schedule
+ *  up to 24 hours worth of intervals, which — since App.resume is our only
+ *  native re-scheduling trigger — is what actually keeps reminders firing
+ *  if the user doesn't manually open the app for a full day. */
+const MAX_OCCURRENCES = 24;
 
 const SCHEDULED_IDS_KEY = 'grit_scheduled_reminder_ids';
 const WEB_LAST_FIRED_KEY = 'grit_web_reminder_last';
@@ -107,14 +119,6 @@ async function cancelPreviouslyScheduled(): Promise<void> {
   writeScheduledIds([]);
 }
 
-/** Local time of the next daily roll-over boundary (honoring resetHour). */
-function nextResetTime(now: Date, resetHour: number): Date {
-  const d = new Date(now);
-  d.setHours(resetHour, 0, 0, 0);
-  if (d.getTime() <= now.getTime()) d.setDate(d.getDate() + 1);
-  return d;
-}
-
 async function syncNativeReminders(state: ReminderState, now: number): Promise<void> {
   await cancelPreviouslyScheduled();
 
@@ -125,13 +129,20 @@ async function syncNativeReminders(state: ReminderState, now: number): Promise<v
   const reminders = activeReminders(state);
   if (reminders.length === 0) return;
 
+  // Make sure the channel exists before we reference it by id below —
+  // otherwise the schedule call silently succeeds but the OS drops the
+  // notification because the channel is unknown.
+  await ensureReminderChannel();
+
   const intervalMs = FREQ_HOURS[state.settings.reminderFrequency] * 3_600_000;
-  const nowDate = new Date(now);
-  const boundary = nextResetTime(nowDate, state.settings.dailyResetHour).getTime();
-  // How many interval steps fit before the day rolls over.
-  const stepsUntilBoundary = Math.floor((boundary - now) / intervalMs);
-  const occurrences = Math.max(0, Math.min(MAX_OCCURRENCES, stepsUntilBoundary));
-  if (occurrences === 0) return;
+  // Old code capped occurrences at (next daily-reset boundary / intervalMs)
+  // which floored to 0 whenever less than one interval remained before
+  // reset — the "reminders never come" root cause. We now always queue
+  // MAX_OCCURRENCES intervals ahead, spanning across daily boundaries.
+  // Reminder body text ("X min remaining today") is computed at schedule
+  // time and can go slightly stale if it fires the next day; that's a
+  // small textual inaccuracy versus the previous total silence.
+  const occurrences = MAX_OCCURRENCES;
 
   const scheduled: number[] = [];
   const notifications = [];
@@ -145,6 +156,11 @@ async function syncNativeReminders(state: ReminderState, now: number): Promise<v
         title: reminder.title,
         body: reminder.body,
         schedule: { at: new Date(now + k * intervalMs) },
+        // channelId is what carries the custom tune on Android 8+; the
+        // `sound` field is also set for older-Android (pre-channel)
+        // fallback where per-notification sound still works.
+        channelId: REMINDER_CHANNEL_ID,
+        sound: REMINDER_SOUND_FILE,
         // Deep-link target so tapping opens the right screen.
         extra: { commitmentId: reminder.commitmentId, action: reminder.actionLabel },
       });
@@ -216,6 +232,12 @@ function tickWebReminders(state: ReminderState, now: number): void {
           tag: `grit-reminder-${reminder.commitmentId}`,
           silent: !state.settings.reminderSound,
         });
+        // Web Notification API's `silent: false` is meant to play a system
+        // sound but modern browsers (Chrome/Edge/Firefox) generally ignore
+        // it and produce no sound at all. So when the user has the Sound
+        // toggle on, we play our own tune here alongside the notification
+        // dispatch — this is why reminders "never rang" on web previously.
+        if (state.settings.reminderSound) playAlertTune();
         if (state.settings.reminderVibration && supportsVibration()) navigator.vibrate(200);
       } catch {
         // Ignore fire failures.
