@@ -1,0 +1,56 @@
+/* No card, no box, no border — sits directly on the page's own Aqua Lens
+   background (the body gradient + caustic-drift layer stay fully visible
+   behind and around it). */
+.compact-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 26px;
+}
+
+.compact-header-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.compact-header-drop {
+  display: inline-flex;
+  color: var(--accent-deep);
+  filter: drop-shadow(0 0 6px var(--accent-glow));
+}
+
+.compact-header-wordmark {
+  font-size: 22px;
+  letter-spacing: 0.05em;
+  text-shadow: 0 0 14px var(--accent-glow);
+}
+
+.compact-header-theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  padding: 0;
+  border-radius: 50%;
+  color: var(--accent-deep);
+  background: var(--surface-2);
+  box-shadow: inset 0 0 0 1px var(--surface-sunk);
+  transition: color var(--dur-base) var(--ease-liquid), background var(--dur-base) var(--ease-liquid),
+    transform var(--dur-tap) var(--ease-settle);
+}
+@media (hover: hover) and (pointer: fine) {
+  .compact-header-theme-toggle:hover { color: var(--accent-bright); background: var(--surface-strong); }
+}
+.compact-header-theme-toggle:active { transform: scale(0.88); }
+
+/* On mobile the persistent .mobile-topbar (see Layout.css) already shows the
+   GRIT wordmark + theme toggle at the top of every screen, so rendering this
+   compact header there too produced a duplicate GRIT row directly beneath
+   the top bar. Hide it on mobile; it's only needed on desktop, where there
+   is no top bar (the sidebar takes its place and carries no theme toggle). */
+@media (max-width: 768px) {
+  .compact-header { display: none; }
+}

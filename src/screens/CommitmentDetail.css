@@ -1,0 +1,151 @@
+.commitment-detail-screen { max-width: 960px; display: flex; flex-direction: column; gap: 18px; }
+
+.commitment-detail-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  width: fit-content;
+  padding: 8px 15px 8px 12px;
+  border-radius: var(--radius-pill);
+  color: var(--accent-deep);
+  font-size: var(--fs-label);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background: var(--accent-wash);
+  transition: transform var(--dur-tap) var(--ease-settle), background var(--dur-base) var(--ease-liquid);
+}
+@media (hover: hover) and (pointer: fine) {
+  .commitment-detail-back:hover { transform: translateX(-2px); background: var(--accent-tint); }
+}
+.commitment-detail-back:active { transform: scale(0.96); }
+
+.commitment-detail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+.commitment-detail-head-lead { display: flex; flex-direction: column; gap: 9px; }
+.commitment-detail-title { font-size: var(--fs-h1); }
+.commitment-detail-meta { color: var(--muted); font-size: var(--fs-small); }
+.commitment-detail-percent { font-family: var(--font-serif); font-size: 22px; font-weight: 600; color: var(--ocean-950); }
+[data-theme='dark'] .commitment-detail-percent { color: var(--on-ocean); }
+
+.commitment-detail-grid { display: grid; grid-template-columns: 1.5fr 1fr; gap: 16px; align-items: start; }
+
+/* Ripple calendar */
+.commitment-calendar-body { padding: 18px; }
+.commitment-calendar-weekdays,
+.commitment-calendar-week { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; }
+.commitment-calendar-weekdays {
+  margin-bottom: 10px;
+  text-align: center;
+  font-size: var(--fs-micro);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+.commitment-calendar-week { margin-bottom: 8px; }
+
+.commitment-calendar-day {
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+  background: var(--surface-2);
+  box-shadow: inset 0 0 0 1px var(--surface-sunk);
+  cursor: pointer;
+  transition: transform var(--dur-tap) var(--ease-settle), box-shadow var(--dur-base) var(--ease-liquid);
+}
+@media (hover: hover) and (pointer: fine) {
+  .commitment-calendar-day:not(.empty):hover { transform: scale(1.12); }
+}
+.commitment-calendar-day:not(.empty):active { transform: scale(0.92); }
+.commitment-calendar-day.empty { background: transparent; box-shadow: none; cursor: default; }
+.commitment-calendar-day.selected { box-shadow: 0 0 0 3px var(--accent-glow); transform: scale(1.08); }
+
+.commitment-calendar-day.cal-neutral { color: var(--muted); }
+.commitment-calendar-day.cal-accent {
+  color: #eafcfa;
+  background: linear-gradient(145deg, var(--accent-bright), var(--accent));
+  box-shadow: 0 4px 12px var(--accent-glow);
+}
+.commitment-calendar-day.cal-warning { color: #6b4a1f; background: radial-gradient(circle at 35% 30%, #f3d199, var(--warning)); }
+.commitment-calendar-day.cal-danger { color: #fff; background: radial-gradient(circle at 35% 30%, #eaa08d, var(--danger)); }
+.commitment-calendar-day.cal-success {
+  color: #eafcfa;
+  background: radial-gradient(circle at 35% 30%, var(--accent-bright), var(--positive));
+  box-shadow: 0 4px 12px rgba(22, 165, 140, 0.3);
+}
+.commitment-calendar-day.cal-late { color: var(--positive); background: var(--surface-2); box-shadow: inset 0 0 0 2px var(--positive); }
+
+.commitment-calendar-legend {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 14px 18px;
+  position: relative;
+}
+.commitment-calendar-legend::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 16px; right: 16px; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--divider), transparent);
+}
+.commitment-calendar-legend-item { display: inline-flex; align-items: center; gap: 7px; font-size: var(--fs-micro); font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.commitment-calendar-legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+.commitment-calendar-legend-dot.cal-neutral { background: var(--faint); }
+.commitment-calendar-legend-dot.cal-warning { background: var(--warning); }
+.commitment-calendar-legend-dot.cal-danger { background: var(--danger); }
+.commitment-calendar-legend-dot.cal-success { background: var(--positive); }
+
+.commitment-detail-day { min-height: 230px; }
+.day-detail-body { padding: 18px; display: flex; flex-direction: column; gap: 12px; }
+.day-detail-date { font-size: 16px; }
+.day-detail-row { display: flex; align-items: center; justify-content: space-between; }
+.day-detail-row .mono { font-weight: 600; color: var(--ink); }
+.day-detail-note {
+  font-size: var(--fs-small);
+  color: var(--muted);
+  line-height: 1.55;
+  margin-top: 4px;
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  background: var(--accent-wash);
+}
+.commitment-detail-day-empty { padding: 18px; color: var(--muted); font-size: var(--fs-small); }
+
+.commitment-detail-danger { margin-top: 8px; }
+.commitment-delete-confirm {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 20px;
+  color: var(--danger);
+  font-size: var(--fs-small);
+  flex-wrap: wrap;
+  box-shadow: var(--shadow-lens), inset 0 0 0 1px rgba(217, 105, 78, 0.2);
+}
+.commitment-delete-actions { display: flex; gap: 9px; }
+
+.commitment-detail-missing {
+  padding: 40px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: center;
+}
+
+@media (max-width: 900px) {
+  .commitment-detail-grid { grid-template-columns: 1fr; }
+}

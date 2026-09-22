@@ -1,0 +1,90 @@
+.welcome-screen {
+  /* dvh (dynamic viewport height) rather than vh — on mobile browsers vh
+     is the LARGEST possible viewport (address bar collapsed), so centering
+     against vh can leave the card sitting below the fold of the actual,
+     smaller initial viewport (address bar visible), forcing a scroll to
+     see the whole card on first load. dvh tracks the real current
+     viewport, so this fits in one screen without scrolling immediately. */
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 28px;
+  padding-top: calc(env(safe-area-inset-top, 0px) + 28px);
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 28px);
+}
+
+.welcome-card {
+  max-width: 560px;
+  width: 100%;
+  padding: 64px 42px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  animation: surface-in var(--dur-slow) var(--ease-liquid) both;
+}
+
+@media (max-width: 480px) {
+  .welcome-screen { padding: 20px; }
+  /* Smaller vertical padding + gap on narrow phones — the card's content
+     (name input + tagline + continue button) is short, but the original
+     64px top/bottom padding alone could push total height past a small
+     phone's viewport once the browser chrome/keyboard-safe area is
+     accounted for. Typography scale is intentionally left alone (no
+     smaller than clamp(40px,10vw,64px) already provides) per "do not make
+     the text unnecessarily tiny". */
+  .welcome-card { padding: 40px 24px; gap: 14px; }
+}
+
+/* The primary, larger visual element — the input IS the name display.
+   (.display sets family/weight/tracking only; font-size must be set here —
+   it isn't part of that shared helper, so this needed an explicit size.) */
+.welcome-name-input {
+  width: 100%;
+  border: 0;
+  outline: none;
+  background: transparent;
+  text-align: center;
+  color: var(--ink);
+  font-size: clamp(40px, 10vw, 64px);
+  letter-spacing: 0.015em;
+  padding: 4px 0;
+  animation: rise-in var(--dur-slow) var(--ease-liquid) both;
+  animation-delay: 80ms;
+}
+
+.welcome-name-input::placeholder {
+  color: var(--faint);
+}
+
+/* Override the global boxed focus ring — a hard pill outline around a
+   heading-sized input reads as "form field", not "name on display". A
+   thin, fading underline reads as a caption/label edge instead, matching
+   the liquid/no-hard-border Aqua Lens language. */
+.welcome-name-input:focus-visible {
+  outline: none;
+  box-shadow: none;
+  border-radius: 0;
+}
+.welcome-name-input {
+  border-bottom: 2px solid transparent;
+  transition: border-color var(--dur-base) var(--ease-liquid);
+}
+.welcome-name-input:focus-visible {
+  border-bottom-color: var(--accent-soft);
+}
+
+/* Smaller supporting text underneath. */
+.welcome-tagline {
+  font-size: var(--fs-h2);
+  animation: rise-in var(--dur-slow) var(--ease-liquid) both;
+  animation-delay: 160ms;
+}
+
+.welcome-continue {
+  margin-top: 14px;
+  animation: rise-in var(--dur-slow) var(--ease-liquid) both;
+  animation-delay: 240ms;
+}

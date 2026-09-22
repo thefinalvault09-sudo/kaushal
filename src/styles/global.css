@@ -1,0 +1,332 @@
+@import './theme.css';
+
+/* ---------------- Reset ---------------- */
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+/* Always reserve the scrollbar gutter so the viewport's usable width stays
+   constant whether or not a given screen's content is tall enough to
+   scroll — otherwise fixed-width elements (e.g. the mobile topbar) visibly
+   shift/narrow by the scrollbar's width when switching between a short tab
+   and a tall one. */
+html { scrollbar-gutter: stable; }
+/* Defensive clip: the app's width should always be exactly the viewport's
+   (the shell/header/nav all use fixed or minmax(0,...) tracks — see
+   Layout.css/Today.css), but this guards against any single overflowing
+   child (e.g. unbreakable text) ever stretching the whole page wider than
+   the viewport and, with it, visually widening sticky/fixed chrome that's
+   sized relative to the page rather than the viewport. Doesn't change any
+   layout that already fits — only clips content that would otherwise
+   overflow off-screen. */
+html, body { overflow-x: hidden; }
+/* Welcome/empty Today state lock: while there are no commitments, the page
+   is designed to fit within a single viewport and must not scroll at all.
+   Today.tsx toggles `welcome-locked` on <html> whenever the list is empty;
+   normal scrolling returns automatically once commitments overflow the
+   screen (the class is removed as soon as any commitment exists). The
+   fixed bottom nav is position:fixed so it stays usable regardless. */
+html.welcome-locked, html.welcome-locked body { overflow: hidden; }
+
+body {
+  min-height: 100vh;
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: var(--fs-body);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  /* Clear-water field: soft top-left light + ivory→aqua depth gradient. */
+  background:
+    radial-gradient(ellipse at 16% 8%, var(--glow), transparent 34%),
+    radial-gradient(ellipse at 88% 92%, var(--accent-tint), transparent 42%),
+    linear-gradient(158deg, var(--field-a) 0%, var(--field-b) 52%, var(--field-c) 100%);
+  background-attachment: fixed;
+  transition: background-color var(--dur-base) var(--ease-liquid), color var(--dur-base) var(--ease-liquid);
+}
+
+/* Ambient caustic light — drifts slowly across the whole app. */
+body::before {
+  content: '';
+  position: fixed;
+  inset: -20%;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.5;
+  mix-blend-mode: soft-light;
+  background-image:
+    radial-gradient(ellipse at 21% 30%, transparent 56%, var(--caustic) 59%, transparent 64%),
+    radial-gradient(ellipse at 67% 22%, transparent 54%, var(--caustic) 57%, transparent 62%),
+    radial-gradient(ellipse at 49% 81%, transparent 57%, var(--caustic) 60%, transparent 65%);
+  background-size: 40vw 26vw, 48vw 30vw, 44vw 28vw;
+  animation: caustic-drift 26s linear infinite alternate;
+  /* This animation already only touches transform (compositor-only), but
+     it's a huge, always-visible, infinitely-running layer — promoting it
+     to its own GPU layer up front (rather than letting the browser decide
+     mid-animation) keeps it locked to a steady 60fps instead of
+     occasionally dropping frames when it starts moving. */
+  will-change: transform;
+}
+
+#root { position: relative; z-index: 1; min-height: 100vh; }
+
+h1, h2, h3, h4, p { margin: 0; }
+/* touch-action: manipulation drops the browser's ~300ms double-tap-to-zoom
+   delay on tap targets, so buttons/links respond the instant a finger lifts
+   instead of waiting to see if a second tap is coming. */
+button {
+  font-family: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+input, select, textarea { font-family: inherit; font-size: inherit; color: inherit; }
+a {
+  color: var(--accent-deep);
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+::selection { background: var(--accent-soft); color: var(--ocean-950); }
+
+* { scrollbar-width: thin; scrollbar-color: var(--accent-soft) transparent; }
+*::-webkit-scrollbar { width: 9px; height: 9px; }
+*::-webkit-scrollbar-thumb { background: var(--accent-soft); border-radius: 999px; border: 2px solid transparent; background-clip: content-box; }
+
+/* ---------------- Focus (soft aqua glow, no hard ring) ---------------- */
+:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 4px var(--accent-glow);
+  border-radius: 12px;
+}
+
+/* ---------------- Typography helpers ---------------- */
+.display {
+  font-family: var(--font-serif);
+  font-weight: 380;
+  font-optical-sizing: auto;
+  letter-spacing: -0.02em;
+  line-height: 1.02;
+}
+.accent {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-weight: 400;
+  color: var(--accent-deep);
+}
+.serif { font-family: var(--font-serif); font-weight: 400; }
+.label {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: var(--fs-label);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.eyebrow {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: var(--fs-label);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--accent-deep);
+}
+.mono, .num {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+}
+
+/* ---------------- Liquid surfaces ---------------- */
+.lens {
+  position: relative;
+  background: linear-gradient(150deg, var(--surface), var(--surface-2));
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lens);
+  /* Blur radius trimmed from 20px to 14px — visually identical frosted
+     look at typical card sizes, but a noticeably cheaper filter for the
+     compositor to recompute on every scroll frame (backdrop-filter cost
+     scales with blur radius, and .lens appears dozens of times per screen). */
+  -webkit-backdrop-filter: blur(14px) saturate(1.1);
+  backdrop-filter: blur(14px) saturate(1.1);
+}
+/* Frosted fallback where backdrop-filter is unsupported. */
+@supports not ((backdrop-filter: blur(2px)) or (-webkit-backdrop-filter: blur(2px))) {
+  .lens { background: linear-gradient(150deg, var(--surface-strong), var(--surface)); }
+}
+.lens-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+}
+
+/* Fading dividers — never a hard line. */
+.divider {
+  height: 1px;
+  border: 0;
+  background: linear-gradient(90deg, transparent, var(--divider) 16%, var(--divider) 84%, transparent);
+}
+.divider-soft {
+  height: 1px;
+  border: 0;
+  background: linear-gradient(90deg, transparent, var(--divider) 50%, transparent);
+}
+
+/* ---------------- Liquid buttons ---------------- */
+.btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 12px 22px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  font-size: var(--fs-small);
+  font-weight: 650;
+  letter-spacing: 0.01em;
+  color: var(--accent-deep);
+  background: var(--surface-strong);
+  box-shadow: 0 8px 20px rgba(2, 74, 86, 0.1), inset 0 1px 0 var(--highlight);
+  /* Only transform/color/background — box-shadow is no longer transitioned
+     directly (see .btn::after below). Transform+opacity are compositor-only
+     (GPU, no repaint), so a tap's :active feedback lands immediately
+     instead of waiting on a paint pass. --dur-tap keeps that feedback
+     inside ~120ms so taps feel instant rather than animated. */
+  transition: transform var(--dur-tap) var(--ease-settle),
+    background var(--dur-quick) var(--ease-liquid), color var(--dur-quick) var(--ease-liquid);
+}
+/* The hover-only "extra glow" shadow lives on a pseudo-element that fades
+   in via opacity instead of the button's own box-shadow interpolating
+   between two values. An animated box-shadow repaints the element (and,
+   for buttons sitting on a .lens glass surface, competes with an active
+   backdrop-filter) every frame of the transition; opacity is compositor-
+   only. Same rest-state and hover-state shadow, same timing, cheaper to
+   animate between them. */
+.btn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: var(--shadow-raised), inset 0 1px 0 var(--highlight);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--dur-quick) var(--ease-liquid);
+}
+/* Hover lift only for real pointers — on touch, tapping a link fires a
+   synthetic hover that can stick after release, fighting with :active and
+   producing a rapid double-animation ("flutter") between the two states. */
+@media (hover: hover) and (pointer: fine) {
+  .btn:hover { transform: translateY(-2px); }
+  .btn:hover::after { opacity: 1; }
+}
+/* Press feedback is transform-only (scale) — a border-radius "blob morph"
+   on tap forces a full repaint every frame of the transition (border-radius
+   isn't compositor-only), which is exactly the kind of expensive-during-
+   interaction work we want to avoid. The pill shape itself is unchanged at
+   rest and on release. */
+.btn:active { transform: scale(0.96); }
+.btn:disabled { opacity: 0.42; cursor: not-allowed; transform: none; box-shadow: none; }
+.btn:disabled::after { display: none; }
+
+.btn-primary {
+  color: #eafcfa;
+  background: linear-gradient(135deg, var(--accent), var(--accent-deep));
+  box-shadow: 0 12px 26px rgba(3, 91, 105, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+.btn-primary::after { box-shadow: 0 16px 32px rgba(3, 91, 105, 0.36), inset 0 1px 0 rgba(255, 255, 255, 0.35); }
+
+.btn-ghost { background: var(--surface-2); box-shadow: inset 0 0 0 1px var(--surface-sunk); }
+.btn-danger { color: var(--danger); background: var(--danger-soft); box-shadow: inset 0 0 0 1px rgba(217, 105, 78, 0.2); }
+.btn-danger::after { box-shadow: 0 12px 26px rgba(217, 105, 78, 0.22); }
+.btn-block { width: 100%; }
+.btn-icon { padding: 11px; aspect-ratio: 1; border-radius: 50%; }
+
+/* ---------------- Liquid inputs ---------------- */
+.field { display: flex; flex-direction: column; gap: 8px; }
+.field label, .field .label { color: var(--muted); }
+.field input, .field select {
+  padding: 13px 16px;
+  border: 0;
+  border-radius: var(--radius-md);
+  color: var(--ink);
+  background: var(--surface-strong);
+  box-shadow: inset 0 2px 5px var(--surface-sunk), inset 0 0 0 1px rgba(2, 74, 86, 0.06);
+  transition: box-shadow var(--dur-quick) var(--ease-liquid);
+}
+.field input::placeholder { color: var(--faint); }
+.field input:focus, .field select:focus {
+  outline: none;
+  box-shadow: inset 0 2px 5px var(--surface-sunk), 0 0 0 4px var(--accent-glow);
+}
+.field-error { font-size: var(--fs-label); color: var(--danger); font-weight: 600; }
+
+/* ---------------- Status pills ---------------- */
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 12px 5px 9px;
+  border-radius: var(--radius-pill);
+  font-size: var(--fs-micro);
+  font-weight: 750;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.status-pill .bead { width: 9px; height: 9px; border-radius: 50%; }
+
+/* ---------------- Motion utilities ---------------- */
+@keyframes caustic-drift {
+  0% { transform: translate3d(-3%, -2%, 0) rotate(-2deg) scale(1); }
+  100% { transform: translate3d(4%, 3%, 0) rotate(3deg) scale(1.06); }
+}
+@keyframes surface-in {
+  from { opacity: 0; transform: translateY(16px) scale(0.99); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes rise-in {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes route-in {
+  from { opacity: 0; transform: translateY(6px) scale(0.994); }
+  to { opacity: 1; transform: none; }
+}
+/* Gentle, buttery ease — the old translateY(12px)+--ease-liquid combo read as
+   an abrupt jump when switching tabs. A shorter travel distance plus an
+   "ease-out-expo" curve (fast start, long soft settle) feels smooth instead
+   of a hard snap. */
+.route-enter { animation: route-in 420ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+.stagger > * { animation: rise-in var(--dur-slow) var(--ease-liquid) both; animation-delay: calc(var(--i, 0) * 65ms); }
+
+/* Press feedback usable on touch (no hover reliance) */
+.pressable { transition: transform var(--dur-tap) var(--ease-settle), box-shadow var(--dur-quick) var(--ease-liquid); }
+.pressable:active { transform: scale(0.98); }
+
+.app-loading {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  font-size: 12px;
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px; height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* ---------------- Reduced motion ---------------- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

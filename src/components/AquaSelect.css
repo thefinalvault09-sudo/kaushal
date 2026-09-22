@@ -1,0 +1,117 @@
+.aqua-select {
+  position: relative;
+  display: inline-block;
+}
+
+.aqua-select-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 180px;
+  padding: 12px 16px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  color: var(--ink);
+  font-size: var(--fs-small);
+  font-weight: 600;
+  text-align: left;
+  background: var(--surface-strong);
+  box-shadow: inset 0 2px 5px var(--surface-sunk), inset 0 0 0 1px rgba(2, 74, 86, 0.06);
+  transition: box-shadow var(--dur-quick) var(--ease-liquid);
+}
+.aqua-select-trigger:focus-visible {
+  outline: none;
+  box-shadow: inset 0 2px 5px var(--surface-sunk), 0 0 0 4px var(--accent-glow);
+}
+.aqua-select-trigger.open {
+  box-shadow: inset 0 2px 5px var(--surface-sunk), 0 0 0 4px var(--accent-glow);
+}
+.aqua-select-trigger:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.aqua-select-value {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.aqua-select-chevron {
+  flex-shrink: 0;
+  display: inline-flex;
+  color: var(--accent-deep);
+  transition: transform var(--dur-quick) var(--ease-liquid);
+}
+.aqua-select-trigger.open .aqua-select-chevron {
+  transform: rotate(180deg);
+}
+
+/* The dropdown panel itself — this is the piece that used to be a native,
+   unstyleable OS/browser popup. Same glass-surface language as `.lens`
+   (translucent, blurred, soft-glowing), organic rounded corners, and a
+   smooth scale+fade open animation rather than snapping into place. */
+.aqua-select-panel {
+  /* Fixed + portaled to <body> so it escapes each Aqua Lens card's
+     backdrop-filter stacking context (otherwise a later card paints over
+     it); left/top/width are set inline from the trigger's position. */
+  position: fixed;
+  z-index: 1000;
+  max-height: 280px;
+  overflow-y: auto;
+  margin: 0;
+  padding: 8px;
+  list-style: none;
+  border-radius: var(--radius-lg);
+  /* Two background layers: the aqua glass tint on top, over an OPAQUE base
+     (`--field-b`, a solid hex in both themes). Without the opaque base the
+     panel's translucent surface let the page content behind it bleed
+     through, so options lower in the list visually overlapped whatever sat
+     beneath the dropdown (e.g. the Daily refresh section). The opaque base
+     fully occludes that while the tint + blur keep the Aqua Lens look. */
+  background: linear-gradient(150deg, var(--surface-strong), var(--surface-2)), var(--field-b);
+  -webkit-backdrop-filter: blur(16px) saturate(1.2);
+  backdrop-filter: blur(16px) saturate(1.2);
+  box-shadow: var(--shadow-raised), 0 0 0 1px rgba(90, 219, 224, 0.16), 0 0 30px var(--accent-glow);
+  transform-origin: top center;
+  animation: aqua-select-open var(--dur-quick) var(--ease-settle) both;
+}
+/* Upward variant — used when there isn't room below the trigger, so the
+   menu opens up and away from the content beneath. Positioning (bottom) is
+   applied inline; this only sets the animation origin/direction. */
+.aqua-select-panel.up {
+  transform-origin: bottom center;
+  animation-name: aqua-select-open-up;
+}
+@keyframes aqua-select-open {
+  from { opacity: 0; transform: scale(0.96) translateY(-4px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes aqua-select-open-up {
+  from { opacity: 0; transform: scale(0.96) translateY(4px); }
+  to { opacity: 1; transform: none; }
+}
+
+.aqua-select-option {
+  display: block;
+  width: 100%;
+  padding: 10px 14px;
+  border: 0;
+  border-radius: var(--radius-md);
+  color: var(--ink);
+  font-size: var(--fs-small);
+  font-weight: 600;
+  text-align: left;
+  background: transparent;
+  transition: background var(--dur-quick) var(--ease-liquid), color var(--dur-quick) var(--ease-liquid);
+}
+@media (hover: hover) and (pointer: fine) {
+  .aqua-select-option:hover { background: var(--accent-wash); }
+}
+.aqua-select-option.selected {
+  color: var(--accent-deep);
+  background: var(--accent-tint);
+  font-weight: 700;
+}

@@ -1,0 +1,104 @@
+.progress-screen { max-width: 980px; display: flex; flex-direction: column; gap: 18px; }
+
+.progress-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 6px;
+}
+.progress-header-lead { display: flex; flex-direction: column; gap: 10px; }
+.progress-title { font-size: var(--fs-h1); }
+
+/* The dropdown's own visual styling now lives in AquaSelect.css (a shared
+   Aqua Lens listbox component) — .progress-select here only widens its
+   trigger button slightly for this screen's layout. */
+.progress-select .aqua-select-trigger { min-width: 220px; }
+
+.progress-top-grid { display: grid; grid-template-columns: 1.15fr 1fr; gap: 16px; }
+
+.progress-ring-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  padding: 28px 22px 24px;
+}
+.progress-rings { display: flex; gap: 38px; flex-wrap: wrap; justify-content: center; }
+.progress-ring-unit { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+.progress-ring-value { font-family: var(--font-serif); font-size: 26px; font-weight: 500; color: var(--ocean-950); }
+[data-theme='dark'] .progress-ring-value { color: var(--on-ocean); }
+.progress-ring-caption { color: var(--muted); }
+.progress-ring-sub { color: var(--muted); text-align: center; font-size: var(--fs-small); }
+
+.progress-stat-list { overflow: hidden; align-self: start; }
+.progress-stat-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 20px;
+}
+.progress-stat-row + .progress-stat-row::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 16px; right: 16px; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--divider), transparent);
+}
+.progress-stat-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--faint); flex-shrink: 0; }
+.dot-positive { background: var(--positive); }
+.dot-warning { background: var(--warning); }
+.dot-danger { background: var(--danger); }
+.progress-stat-label { flex: 1; font-size: var(--fs-small); color: var(--muted); }
+.progress-stat-value { font-size: 16px; font-weight: 700; color: var(--ink); }
+
+.progress-chart-card { padding-bottom: 10px; }
+.progress-chart { display: flex; align-items: flex-end; gap: 5px; padding: 22px 20px 14px; height: 168px; }
+.progress-chart-empty { color: var(--muted); font-size: var(--fs-small); padding: 22px; }
+.progress-bar-col { flex: 1; height: 100%; display: flex; align-items: flex-end; }
+.progress-bar-track {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: flex-end;
+  border-radius: var(--radius-pill);
+  background: var(--surface-sunk);
+  overflow: hidden;
+}
+.progress-bar-fill {
+  width: 100%;
+  min-height: 4px;
+  border-radius: var(--radius-pill);
+  transform-origin: bottom;
+  animation: bar-rise var(--dur-slow) var(--ease-liquid) both;
+  animation-delay: calc(var(--i) * 16ms);
+}
+@keyframes bar-rise { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+.bar-done { background: linear-gradient(180deg, var(--accent-bright), var(--positive)); box-shadow: 0 0 10px var(--accent-glow); }
+.bar-partial { background: linear-gradient(180deg, var(--accent-soft), var(--accent)); }
+.bar-none { background: transparent; }
+
+.progress-chart-legend {
+  display: flex;
+  gap: 18px;
+  padding: 10px 20px 12px;
+  position: relative;
+}
+.progress-chart-legend::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 16px; right: 16px; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--divider), transparent);
+}
+.progress-legend-key { display: inline-flex; align-items: center; gap: 7px; font-size: var(--fs-micro); letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
+.progress-legend-dot { width: 9px; height: 9px; border-radius: 50%; }
+.progress-legend-dot.bar-done { background: var(--positive); }
+.progress-legend-dot.bar-partial { background: var(--accent); }
+.progress-legend-dot.bar-none-key { background: var(--faint); }
+
+@media (max-width: 760px) {
+  .progress-top-grid { grid-template-columns: 1fr; }
+  .progress-title { font-size: 28px; }
+}

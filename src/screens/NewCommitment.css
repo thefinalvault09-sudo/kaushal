@@ -1,0 +1,132 @@
+.new-commitment-screen {
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.new-commitment-head {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 22px;
+  text-align: center;
+}
+
+.new-commitment-title {
+  font-size: var(--fs-display);
+  color: var(--ink);
+}
+
+.new-commitment-sub {
+  font-size: var(--fs-small);
+  color: var(--muted);
+}
+
+/* ---------------- Calm glass form ---------------- */
+.new-commitment-form {
+  padding: 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  animation: surface-in var(--dur-base) var(--ease-liquid) both;
+}
+
+.new-commitment-duration-row {
+  display: flex;
+  gap: 12px;
+}
+
+.new-commitment-duration-row select {
+  flex: 1;
+}
+
+/* Segmented Duration/Completion toggle — mirrors the Settings theme switch. */
+.new-commitment-type-row {
+  display: inline-flex;
+  padding: 4px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-sunk);
+  gap: 3px;
+}
+.new-commitment-type-option {
+  flex: 1;
+  padding: 9px 18px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  font-size: var(--fs-label);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  background: transparent;
+  transition: color var(--dur-quick) var(--ease-liquid), background var(--dur-base) var(--ease-liquid), box-shadow var(--dur-base) var(--ease-liquid);
+}
+@media (hover: hover) and (pointer: fine) {
+  .new-commitment-type-option:hover { color: var(--ink); }
+}
+.new-commitment-type-option.active {
+  color: var(--accent-deep);
+  background: var(--surface-strong);
+  box-shadow: 0 6px 14px rgba(2, 74, 86, 0.12), inset 0 1px 0 var(--highlight);
+}
+.new-commitment-type-option:active { transform: scale(0.96); }
+
+.new-commitment-completion-hint {
+  margin: -6px 0 0;
+  font-size: var(--fs-small);
+  color: var(--muted);
+}
+.new-commitment-completion-hint strong {
+  color: var(--accent-deep);
+}
+
+/* ---------------- Scheduled-range "ripple" preview ---------------- */
+.new-commitment-preview {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  padding: 15px 18px;
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, var(--accent-wash), var(--accent-tint));
+  box-shadow: inset 0 1px 0 var(--highlight);
+}
+
+.new-commitment-preview-tag {
+  color: var(--accent-deep);
+}
+
+.new-commitment-preview-range {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--ink);
+  font-size: var(--fs-small);
+  font-variant-numeric: tabular-nums;
+}
+
+.new-commitment-preview-range svg {
+  flex-shrink: 0;
+  color: var(--accent);
+}
+
+/* ---------------- Actions ---------------- */
+.new-commitment-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 6px;
+}
+
+@media (max-width: 520px) {
+  .new-commitment-form {
+    padding: 24px 20px;
+  }
+
+  .new-commitment-actions {
+    flex-direction: column-reverse;
+  }
+
+  .new-commitment-actions .btn {
+    width: 100%;
+  }
+}

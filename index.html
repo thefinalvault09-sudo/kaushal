@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/hi/icon.svg" />
+    <link rel="apple-touch-icon" href="/hi/icon.svg" />
+    <link rel="manifest" href="/hi/manifest.webmanifest" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <!-- Matches theme.css --field-a exactly (the color at the very top of the
+         page background) for each theme, so the OS status bar blends into
+         the app with no visible seam on first paint, before JS runs. -->
+    <meta name="theme-color" content="#f9fffd" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#06303c" media="(prefers-color-scheme: dark)" />
+    <meta name="description" content="Grit — a focused personal commitment and discipline system." />
+    <title>Grit</title>
+    <script>
+      // Deep/Dark is the default theme for a new install / first launch.
+      // <html> already has no data-theme attribute at this point, and
+      // theme.css's bare `:root` block already resolves to the Deep
+      // palette by default (see theme.css) — so this inline script isn't
+      // needed to establish that default. What it DOES do is avoid a
+      // flash-of-wrong-theme for a RETURNING user who previously chose
+      // Daylight: their choice lives in IndexedDB (read asynchronously by
+      // AppContext after this HTML has already painted), so without a
+      // faster signal, the very first frame would render in dark before
+      // snapping to their saved light choice a moment later. AppContext
+      // mirrors the persisted theme into this synchronous, same-key
+      // localStorage cache on every change (see AppContext.tsx) purely so
+      // this tiny inline read can happen before first paint.
+      try {
+        var cachedTheme = window.localStorage.getItem('grit_theme_cache');
+        if (cachedTheme === 'light' || cachedTheme === 'dark') {
+          document.documentElement.setAttribute('data-theme', cachedTheme);
+        }
+      } catch (e) {
+        // Storage unavailable (private browsing, quota) — fall back to the
+        // default Deep theme already baked into theme.css's :root block.
+      }
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

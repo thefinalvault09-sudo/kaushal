@@ -1,0 +1,327 @@
+.commitments-screen {
+  max-width: 960px;
+  display: flex;
+  flex-direction: column;
+  gap: 36px;
+}
+
+/* ---------------- Header ---------------- */
+.commitments-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 18px;
+}
+
+.commitments-header-lead {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.commitments-title {
+  font-size: var(--fs-display);
+  color: var(--ink);
+  max-width: 12ch;
+}
+
+/* ---------------- Section header with fading rule ---------------- */
+.commitments-section-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.commitments-section-title {
+  flex-shrink: 0;
+  color: var(--ink);
+  font-size: var(--fs-label);
+}
+
+.commitments-section-count {
+  flex-shrink: 0;
+  font-size: var(--fs-label);
+  font-weight: 700;
+  color: var(--accent-deep);
+  padding: 3px 12px;
+  border-radius: var(--radius-pill);
+  background: var(--accent-tint);
+}
+
+.commitments-section-head.tone-complete .commitments-section-count {
+  color: var(--positive);
+}
+
+/* Divider that fades to transparent at the trailing end. */
+.commitments-section-rule {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, var(--divider), transparent 92%);
+}
+
+/* ---------------- Rows ---------------- */
+.commitments-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.commitment-row {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  gap: 6px;
+  padding: 6px 6px 6px 0;
+  color: var(--ink);
+  border-radius: var(--radius-lg);
+  contain: layout;
+  transition: transform var(--dur-tap) var(--ease-settle);
+}
+
+/* The actual clickable row surface — everything the old single <Link>
+   used to render, now nested so a separate delete button can sit beside
+   it without being inside an <a> (buttons-inside-links are invalid HTML
+   and untappable on touch). */
+.commitment-row-link {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 20px 18px 20px 24px;
+  color: inherit;
+  border-radius: inherit;
+}
+
+/* Hover's "extra shadow" fades in via opacity on a pseudo-element instead
+   of animating the row's own box-shadow — this row already pays for a
+   live backdrop-filter (.lens), so this avoids stacking a second
+   paint-triggering transition on top of that. `overflow: hidden` above
+   would clip an inset-only glow pseudo-element, so this sits as a sibling
+   layer sized to the row via absolute inset:0 same as the row itself. */
+.commitment-row::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: var(--shadow-raised);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--dur-quick) var(--ease-liquid);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .commitment-row:hover {
+    transform: translateY(-2px);
+  }
+  .commitment-row:hover::after {
+    opacity: 1;
+  }
+}
+
+.commitment-row:active {
+  transform: scale(0.99);
+}
+
+/* Delete affordance — a quiet icon button beside the row, not inside its
+   clickable link area. Muted at rest so it doesn't compete with the row's
+   own content; warms to the danger tone on hover/focus so its purpose is
+   unambiguous before it's pressed. */
+.commitment-row-delete {
+  flex-shrink: 0;
+  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  margin-right: 6px;
+  border: 0;
+  border-radius: 50%;
+  color: var(--faint);
+  background: transparent;
+  transition: color var(--dur-quick) var(--ease-liquid), background var(--dur-quick) var(--ease-liquid),
+    transform var(--dur-tap) var(--ease-settle);
+}
+@media (hover: hover) and (pointer: fine) {
+  .commitment-row-delete:hover { color: var(--danger); background: var(--danger-soft); }
+}
+.commitment-row-delete:active { transform: scale(0.9); }
+
+/* Inline confirm panel — replaces the row's own content area visually by
+   overlaying it, same glass surface + soft glow language as the rest of
+   the app (no native confirm() dialog). */
+.commitment-row.confirming {
+  transform: none;
+}
+.commitment-row-confirm {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 18px 22px;
+  border-radius: inherit;
+  color: var(--danger);
+  font-size: var(--fs-small);
+  background: linear-gradient(150deg, var(--surface-strong), var(--surface));
+  -webkit-backdrop-filter: blur(14px) saturate(1.1);
+  backdrop-filter: blur(14px) saturate(1.1);
+  box-shadow: var(--shadow-lens), inset 0 0 0 1px rgba(217, 105, 78, 0.22);
+  animation: surface-in var(--dur-quick) var(--ease-liquid) both;
+}
+.commitment-row-confirm strong { color: var(--ink); }
+.commitment-row-confirm-actions { display: flex; gap: 9px; flex-shrink: 0; }
+
+.commitment-row-main {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.commitment-row-name {
+  font-size: var(--fs-h2);
+  font-weight: 500;
+  line-height: 1.12;
+  color: var(--ink);
+}
+
+.commitment-row-meta {
+  font-size: var(--fs-small);
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Fluid completion fill — rounded pill track, aqua gradient fill. */
+.commitment-row-track {
+  position: relative;
+  height: 9px;
+  max-width: 360px;
+  margin-top: 3px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-sunk);
+  overflow: hidden;
+}
+
+.commitment-row-fill {
+  width: 100%;
+  height: 100%;
+  border-radius: var(--radius-pill);
+  background: linear-gradient(90deg, var(--accent-deep), var(--accent), var(--accent-bright));
+  box-shadow: inset 0 1px 0 var(--highlight);
+  /* transform:scaleX instead of animating width — same visual growth, but
+     compositor-only so the fill animation can't drop frames. */
+  transform-origin: left;
+  transition: transform var(--dur-slow) var(--ease-liquid);
+}
+
+.commitment-row-fill.full {
+  background: linear-gradient(90deg, var(--positive), var(--accent-bright));
+}
+
+.commitment-row-progress {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 5px;
+  min-width: 96px;
+}
+
+.commitment-row-percent {
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--accent-deep);
+}
+
+.commitment-row.tone-complete .commitment-row-percent {
+  color: var(--positive);
+}
+
+.commitment-row-days {
+  font-size: var(--fs-micro);
+  color: var(--faint);
+}
+
+.commitment-row-chevron {
+  display: inline-flex;
+  flex-shrink: 0;
+  color: var(--faint);
+  opacity: 0;
+  transform: translateX(-6px);
+  transition: opacity var(--dur-quick) var(--ease-liquid),
+    transform var(--dur-quick) var(--ease-liquid),
+    color var(--dur-quick) var(--ease-liquid);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .commitment-row:hover .commitment-row-chevron {
+    opacity: 1;
+    transform: none;
+    color: var(--accent);
+  }
+}
+
+/* ---------------- Empty state ---------------- */
+.commitments-empty {
+  padding: 30px;
+  border-radius: var(--radius-lg);
+  text-align: center;
+  color: var(--muted);
+  font-size: var(--fs-small);
+}
+
+/* ---------------- Mobile: stack internals, big tap targets ---------------- */
+@media (max-width: 768px) {
+  .commitment-row {
+    align-items: flex-start;
+    padding: 6px 6px 6px 0;
+  }
+
+  .commitment-row-link {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+    padding: 20px 14px 20px 20px;
+  }
+
+  .commitment-row-delete {
+    margin-top: 6px;
+  }
+
+  .commitment-row-track {
+    max-width: none;
+  }
+
+  .commitment-row-progress {
+    flex-direction: row;
+    align-items: baseline;
+    justify-content: space-between;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .commitment-row-chevron {
+    display: none;
+  }
+
+  .commitment-row-confirm {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 18px;
+  }
+  .commitment-row-confirm-actions {
+    width: 100%;
+  }
+  .commitment-row-confirm-actions .btn {
+    flex: 1;
+  }
+}

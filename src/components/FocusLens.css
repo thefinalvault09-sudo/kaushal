@@ -1,0 +1,102 @@
+.focus-lens {
+  position: relative;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border-radius: var(--lens-radius);
+  background: linear-gradient(150deg, var(--surface-strong), var(--accent-wash));
+  box-shadow:
+    inset 6px 8px 16px rgba(255, 255, 255, 0.6),
+    inset -12px -16px 30px rgba(2, 100, 118, 0.12),
+    var(--shadow-lens);
+  transition: border-radius var(--dur-slow) var(--ease-liquid), transform var(--dur-base) var(--ease-liquid);
+}
+.focus-lens.variant-round { border-radius: 50%; }
+.focus-lens.variant-drop { border-radius: 49% 51% 46% 54% / 58% 42% 63% 37%; }
+
+/* Continuous, infinite animation — will-change keeps it on its own
+   compositor layer for the whole time it's running, so the transform tween
+   never has to be recomputed against the rest of the page and stays locked
+   to a steady 60fps instead of occasionally janking on a busy frame. */
+.focus-lens.state-running { animation: lens-breathe 5s var(--ease-liquid) infinite; will-change: transform; }
+
+/* Water body rising from the bottom.
+   Fixed at its full (100%-fill) size/position — the "rising" motion below a
+   given percent is done by translateY (see FocusLens.tsx), not by growing
+   `height`. Height is a layout property: animating it forces a reflow +
+   repaint on every frame of the transition, including once a second for as
+   long as a timer session is running. Height/bottom here are the same
+   values the old height:calc(P%+8px) box would occupy at P=100 — clipped
+   by the lens's own `overflow: hidden`, so translating this fixed-size box
+   down reveals exactly the same percentage-of-container fill, just via a
+   compositor-only transform instead of layout. */
+.focus-lens-water {
+  position: absolute;
+  left: -14%;
+  right: -14%;
+  bottom: -6%;
+  height: calc(100% + 8px);
+  background: linear-gradient(180deg, var(--accent-bright), var(--accent) 45%, var(--accent-deep));
+  box-shadow: inset 0 10px 18px rgba(223, 255, 251, 0.28);
+  transition: transform var(--dur-slow) var(--ease-liquid), background var(--dur-base) var(--ease-liquid);
+  will-change: transform;
+}
+.focus-lens.state-done .focus-lens-water {
+  background: linear-gradient(180deg, var(--positive), var(--accent-deep));
+}
+
+/* Wavy meniscus crest */
+.crest {
+  position: absolute;
+  left: 0;
+  right: 0;
+  border-radius: 44%;
+}
+.crest-a {
+  top: -14px;
+  height: 30px;
+  background: var(--accent-bright);
+  opacity: 0.9;
+  animation: crest-spin 7s linear infinite;
+  will-change: transform;
+}
+.crest-b {
+  top: -11px;
+  height: 26px;
+  background: var(--accent-soft);
+  opacity: 0.5;
+  animation: crest-spin 11s linear infinite reverse;
+  will-change: transform;
+}
+.focus-lens.state-running .crest-a { animation-duration: 3.4s; }
+.focus-lens.state-running .crest-b { animation-duration: 5.5s; }
+
+/* Glass highlight */
+.focus-lens-sheen {
+  position: absolute;
+  width: 40%;
+  height: 18%;
+  left: 16%;
+  top: 15%;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.6);
+  filter: blur(6px);
+  transform: rotate(-28deg);
+  pointer-events: none;
+}
+
+.focus-lens-content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  text-shadow: 0 1px 10px rgba(255, 255, 255, 0.4);
+}
+
+@keyframes crest-spin { to { transform: rotate(360deg); } }
+@keyframes lens-breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+}

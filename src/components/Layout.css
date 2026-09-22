@@ -1,0 +1,310 @@
+.app-shell {
+  display: grid;
+  grid-template-columns: 248px 1fr;
+  min-height: 100vh;
+}
+
+/* ---------------- Sidebar (deep ocean glass) ---------------- */
+.sidebar {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  margin: 16px 0 16px 16px;
+  padding: 26px 18px 20px;
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--radius-xl);
+  color: var(--on-ocean);
+  background:
+    radial-gradient(ellipse at 12% 6%, rgba(90, 219, 224, 0.4), transparent 26%),
+    radial-gradient(ellipse at 88% 78%, rgba(21, 175, 187, 0.2), transparent 34%),
+    linear-gradient(168deg, var(--ocean-800), var(--ocean-900) 52%, var(--ocean-950));
+  box-shadow: var(--shadow-raised), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  overflow: hidden;
+  height: calc(100vh - 32px);
+}
+.sidebar::before {
+  content: '';
+  position: absolute;
+  width: 320px;
+  height: 320px;
+  left: -150px;
+  bottom: -80px;
+  border-radius: 50%;
+  background: repeating-radial-gradient(circle, transparent 0 30px, rgba(150, 242, 239, 0.1) 33px 36px, transparent 40px 56px);
+  animation: sidebar-ripple 14s var(--ease-liquid) infinite;
+  pointer-events: none;
+  will-change: transform;
+}
+@keyframes sidebar-ripple {
+  0%, 100% { transform: scale(0.94); opacity: 0.5; }
+  50% { transform: scale(1.08) translate(6px, -6px); opacity: 0.85; }
+}
+
+.sidebar-brand { position: relative; display: flex; align-items: center; gap: 12px; margin-bottom: 40px; }
+.brand-orb {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--drop-radius);
+  color: var(--on-ocean);
+  background: linear-gradient(145deg, rgba(229, 255, 252, 0.4), rgba(31, 189, 198, 0.24));
+  box-shadow: inset 3px 3px 7px rgba(255, 255, 255, 0.4), inset -4px -5px 9px rgba(0, 37, 53, 0.35), 0 8px 18px rgba(0, 30, 39, 0.24);
+}
+.brand-name strong { display: block; font-size: 13px; font-weight: 750; letter-spacing: 0.16em; }
+.brand-name span { display: block; margin-top: 4px; font-size: var(--fs-micro); letter-spacing: 0.16em; text-transform: uppercase; color: var(--on-ocean-muted); }
+
+.sidebar-nav { position: relative; display: flex; flex-direction: column; gap: 6px; flex: 1; }
+.sidebar-link {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 12px 14px;
+  border-radius: var(--radius-pill);
+  color: var(--on-ocean-muted);
+  font-size: 13px;
+  font-weight: 600;
+  transition: color var(--dur-quick) var(--ease-liquid), background var(--dur-base) var(--ease-liquid),
+    transform var(--dur-tap) var(--ease-settle);
+}
+.sidebar-link-drop {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--drop-radius);
+  color: var(--on-ocean-muted);
+  background: rgba(255, 255, 255, 0.06);
+  transition: color var(--dur-quick) var(--ease-liquid), background var(--dur-base) var(--ease-liquid), transform var(--dur-base) var(--ease-liquid);
+}
+@media (hover: hover) and (pointer: fine) {
+  .sidebar-link:hover { color: var(--on-ocean); transform: translateX(3px); }
+  .sidebar-link:hover .sidebar-link-drop { color: var(--accent-bright); }
+}
+.sidebar-link:active { transform: scale(0.98); }
+.sidebar-link.active {
+  color: var(--ocean-950);
+  background: linear-gradient(120deg, rgba(255, 255, 255, 0.95), rgba(199, 246, 242, 0.82));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8), 0 10px 24px rgba(0, 34, 45, 0.24);
+}
+.sidebar-link.active .sidebar-link-drop {
+  color: var(--accent-deep);
+  background: linear-gradient(145deg, #fff, var(--accent-soft));
+  transform: rotate(6deg);
+}
+
+.sidebar-foot { position: relative; padding-top: 16px; display: flex; flex-direction: column; gap: 9px; }
+.sidebar-foot::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 6px; right: 6px; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(150, 242, 239, 0.28), transparent);
+}
+.sidebar-status { display: flex; align-items: center; gap: 9px; }
+.sidebar-status .label { color: var(--on-ocean-muted); }
+.sidebar-status-bead { position: relative; width: 8px; height: 8px; border-radius: 50%; background: var(--on-ocean-muted); }
+.sidebar-status-bead.live { background: var(--accent-bright); box-shadow: 0 0 12px var(--accent-bright); }
+/* Expanding ring via transform+opacity (compositor-only) instead of an
+   animated box-shadow, which would repaint every frame for as long as a
+   timer is running. */
+.sidebar-status-bead.live::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: var(--accent-bright);
+  animation: bead-pulse-ring 2s var(--ease-liquid) infinite;
+  will-change: transform, opacity;
+}
+.sidebar-flow { color: var(--on-ocean-muted); font-size: var(--fs-micro); }
+
+.app-main { min-width: 0; padding: 30px 36px 48px; }
+
+.mobile-topbar, .mobile-nav { display: none; }
+
+/* ---------------- Tablet ---------------- */
+@media (max-width: 1040px) {
+  .app-shell { grid-template-columns: 210px 1fr; }
+  .app-main { padding: 24px 22px 40px; }
+}
+
+/* ---------------- Mobile ---------------- */
+@media (max-width: 768px) {
+  .app-shell {
+    grid-template-columns: 1fr;
+    /* Explicit rows: topbar sized to its content, the main area absorbs
+       ALL leftover vertical space. Without this, the grid's default
+       `align-content: stretch` (min-height:100vh, auto rows) splits the
+       leftover height between BOTH rows — ballooning the sticky topbar
+       into a tall empty box whenever the page content is shorter than the
+       viewport. That's far more pronounced in the fullscreen native
+       Android WebView (no browser URL bar = more leftover height) than in
+       a browser tab, which is exactly why it showed in the APK but looked
+       fine on the live web page. `align-content: start` is a
+       belt-and-suspenders guard for the same thing. */
+    grid-template-rows: auto 1fr;
+    align-content: start;
+  }
+  .sidebar { display: none; }
+
+  /* A frosted glass bar: rounded on all sides, blurred translucent surface,
+     and a soft glowing edge instead of a hard 1px line — GRIT and the
+     theme control sit inside it, floating just off the top of the page. */
+  .mobile-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    /* Offset below the status bar / camera cutout on devices that report
+       a safe-area inset (notches, punch-holes, Android's status bar in a
+       fullscreen/edge-to-edge WebView). env(...) falls back to 0px on
+       platforms that don't define it, so this is a no-op everywhere else —
+       the bar still floats 12px from the top exactly as before. Clamped
+       with min(..., 48px): some Android WebView versions have reported
+       wildly inflated/incorrect safe-area-inset-top values (far beyond any
+       real status bar height), which would push this bar way down the
+       screen and read as an oversized header. No real device's status bar
+       exceeds ~48px, so this clamp can only ever protect against a bad
+       value — it never trims a legitimate one. */
+    top: calc(min(env(safe-area-inset-top, 0px), 48px) + 12px);
+    z-index: 20;
+    margin: 0 12px 6px;
+    /* ~15% shorter than the original bar height, via reduced vertical
+       padding (top/bottom), rather than narrowing the horizontal width. */
+    padding: 12px 22px;
+    border-radius: var(--radius-xl);
+    background: linear-gradient(135deg, var(--surface-2), transparent 130%);
+    /* Blur trimmed from 22px to 14px — this bar is `position: sticky` and
+       sits above content that scrolls underneath it, so the browser has to
+       recompute this blur on every scroll frame. A smaller radius is a much
+       cheaper filter while looking effectively identical at this bar's
+       size. will-change hints the compositor to keep this element on its
+       own GPU layer instead of re-flattening it into the page each frame. */
+    -webkit-backdrop-filter: blur(14px) saturate(1.3);
+    backdrop-filter: blur(14px) saturate(1.3);
+    box-shadow: var(--shadow-soft), inset 0 1px 0 var(--highlight), inset 0 0 0 1px var(--divider);
+    transition: box-shadow var(--dur-base) var(--ease-liquid), background var(--dur-base) var(--ease-liquid);
+    will-change: transform;
+  }
+
+  .mobile-topbar-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .mobile-topbar-drop {
+    display: inline-flex;
+    color: var(--accent-deep);
+    filter: drop-shadow(0 0 6px var(--accent-glow));
+  }
+
+  .mobile-topbar-grit {
+    font-size: 26px;
+    letter-spacing: 0.04em;
+    text-shadow: 0 0 16px var(--accent-glow);
+  }
+
+  .mobile-theme-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border: 0;
+    padding: 0;
+    border-radius: 50%;
+    color: var(--accent-deep);
+    background: transparent;
+    transition: color var(--dur-base) var(--ease-liquid), filter var(--dur-base) var(--ease-liquid),
+      transform var(--dur-tap) var(--ease-settle);
+  }
+  .mobile-theme-toggle svg { filter: drop-shadow(0 0 0 transparent); transition: filter var(--dur-base) var(--ease-liquid); }
+  @media (hover: hover) and (pointer: fine) {
+    .mobile-theme-toggle:hover svg { filter: drop-shadow(0 0 8px var(--accent-glow)); }
+    .mobile-theme-toggle:hover { color: var(--accent-bright); }
+  }
+  .mobile-theme-toggle:active { transform: scale(0.88); }
+
+  /* Slightly more top padding so page content (e.g. the date eyebrow on
+     Today) sits a bit lower, clear of the floating topbar above it. The
+     topbar's own top offset already accounts for the status-bar inset (see
+     .mobile-topbar), so this only needs to add the inset to its bottom
+     padding — clearing the floating bottom nav dock plus the system
+     gesture/nav-bar area beneath it, so the last card in a scrolled list
+     is never hidden under either. Clamped to 48px max for the same reason
+     as .mobile-topbar's top offset above — guards against a WebView
+     reporting an inflated inset value. */
+  .app-main { padding: 64px 14px calc(min(env(safe-area-inset-bottom, 0px), 48px) + 104px); }
+
+  .mobile-nav {
+    display: flex;
+    align-items: center;
+    position: fixed;
+    /* Narrower and centered — the previous edge-hugging 16px insets made
+       the pill read as a full-width bar rather than a floating dock. */
+    left: 50%;
+    right: auto;
+    width: min(340px, calc(100% - 56px));
+    transform: translateX(-50%);
+    /* Lifted clear of the system gesture/navigation bar (Android's
+       edge-to-edge gesture strip, iOS's home indicator) via the safe-area
+       inset, so the dock never sits under or gets obscured by it. Falls
+       back to plain 14px on platforms without a bottom inset — unchanged
+       from before. Clamped to 48px max, same reasoning as .mobile-topbar's
+       top offset above. */
+    bottom: calc(min(env(safe-area-inset-bottom, 0px), 48px) + 14px);
+    z-index: 30;
+    /* ~15% shorter than the original 64px bar. */
+    height: 54px;
+    padding: 6px;
+    border-radius: var(--radius-pill);
+    background: var(--surface-strong);
+    box-shadow: var(--shadow-raised), inset 0 1px 0 var(--highlight);
+    /* Same reasoning as .mobile-topbar above: this bar is `position: fixed`
+       over scrolling content, so a smaller blur radius plus a dedicated
+       GPU layer keeps scroll frames cheap. */
+    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: blur(14px);
+    will-change: transform;
+  }
+  .mobile-nav-link {
+    flex: 1;
+    /* Size to content + padding (not the full bar height) and let
+       align-items: center on .mobile-nav vertically center the pill.
+       Forcing height: 100% previously made the pill's own rounded corners
+       taller than the safe curve of the outer pill, so it visually poked
+       out past the bar's rounded edge instead of sitting centered inside it. */
+    align-self: center;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    padding: 9px 6px;
+    border-radius: var(--radius-pill);
+    color: var(--muted);
+    font-size: var(--fs-micro);
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    transition: color var(--dur-quick) var(--ease-liquid), background var(--dur-base) var(--ease-liquid), transform var(--dur-tap) var(--ease-settle);
+  }
+  .mobile-nav-link span {
+    opacity: 0;
+    max-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    transition: opacity var(--dur-quick) var(--ease-liquid), max-width var(--dur-base) var(--ease-liquid);
+  }
+  .mobile-nav-link:active { transform: scale(0.94); }
+  .mobile-nav-link.active {
+    flex-grow: 1.6;
+    color: var(--accent-deep);
+    background: linear-gradient(145deg, #fff, var(--accent-soft));
+    box-shadow: inset 0 1px 0 #fff, 0 8px 16px rgba(2, 100, 112, 0.18);
+  }
+  .mobile-nav-link.active span { opacity: 1; max-width: 80px; }
+}

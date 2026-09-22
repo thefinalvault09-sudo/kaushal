@@ -1,0 +1,40 @@
+.status-pill.aqua { box-shadow: inset 0 0 0 1px rgba(2, 74, 86, 0.06); }
+
+.status-pill.tone-neutral { color: var(--muted); background: var(--surface-2); }
+.status-pill.tone-neutral .bead { background: var(--faint); }
+
+.status-pill.tone-accent { color: var(--accent-deep); background: var(--accent-tint); }
+/* Expanding pulse ring, built as a transform+opacity animation instead of
+   an animated box-shadow spread. A box-shadow transition repaints the
+   element every frame for as long as it's visible (this pulses forever on
+   any in-progress commitment) — transform/opacity are compositor-only, so
+   the same "glowing ring" look costs nothing during scroll or taps. */
+.status-pill.tone-accent .bead {
+  position: relative;
+  background: var(--accent);
+}
+.status-pill.tone-accent .bead::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: var(--accent-glow);
+  animation: bead-pulse-ring 1.8s var(--ease-liquid) infinite;
+  will-change: transform, opacity;
+}
+@keyframes bead-pulse-ring {
+  0% { transform: scale(1); opacity: 0.7; }
+  100% { transform: scale(2.4); opacity: 0; }
+}
+
+.status-pill.tone-warning { color: var(--warning); background: rgba(215, 154, 82, 0.14); }
+.status-pill.tone-warning .bead { background: var(--warning); }
+
+.status-pill.tone-positive { color: var(--positive); background: rgba(22, 165, 140, 0.14); }
+.status-pill.tone-positive .bead { background: var(--positive); }
+
+.status-pill.tone-late { color: var(--positive); background: rgba(22, 165, 140, 0.1); }
+.status-pill.tone-late .bead { background: transparent; box-shadow: inset 0 0 0 2px var(--positive); }
+
+.status-pill.tone-danger { color: var(--danger); background: var(--danger-soft); }
+.status-pill.tone-danger .bead { background: var(--danger); }
